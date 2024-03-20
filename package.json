@@ -1,0 +1,13 @@
+{
+  "name": "remmind-study-hub",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first study workspace with task planning, flashcards, notes, quizzes and PDF viewing.",
+  "scripts": {
+    "test": "node tests/run-node.js",
+    "serve": "python -m http.server 8000"
+  },
+  "keywords": ["study-planner", "flashcards", "spaced-repetition", "notes", "student-tools"],
+  "license": "MIT"
+}
