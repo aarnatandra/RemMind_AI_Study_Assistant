@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c162b">
+  <meta name="description" content="Plan study sessions, make flashcards and track revision in RemMind Study Hub.">
+  <title>Workspace — RemMind Study Hub</title>
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/app.css">
+</head>
+<body class="app-body">
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand sidebar-brand" href="index.html"><span class="brand-mark">R</span><span>RemMind <span class="brand-muted">Study Hub</span></span></a>
+      <div class="sidebar-label">WORKSPACE</div>
+      <nav class="main-nav" aria-label="Main navigation">
+        <button class="nav-item active" data-route="dashboard"><span>⌂</span> Overview</button>
+        <button class="nav-item" data-route="planner"><span>◷</span> Study planner</button>
+        <button class="nav-item" data-route="flashcards"><span>▤</span> Flashcards <b id="navDueCount" class="nav-count">0</b></button>
+        <button class="nav-item" data-route="notes"><span>✎</span> Notes library</button>
+        <button class="nav-item" data-route="quiz"><span>▦</span> Practice quiz</button>
+        <button class="nav-item" data-route="reader"><span>▱</span> PDF reader</button>
+        <button class="nav-item" data-route="helper"><span>⌕</span> Study helper</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="local-status"><span class="status-dot"></span><div><b>Local workspace</b><small>Your data stays in this browser</small></div></div>
+        <button class="nav-item" data-route="settings"><span>⚙</span> Data & settings</button>
+        <a href="index.html" class="sidebar-home">← Back to home</a>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+        <div class="breadcrumb"><span>RemMind</span><span class="crumb-sep">/</span><b id="pageTitle">Overview</b></div>
+        <div class="topbar-right"><span class="today-label" id="todayLabel"></span><span class="user-avatar">R</span></div>
+      </header>
+
+      <div class="view-container">
+        <section class="view active" id="view-dashboard" data-view="dashboard">
+          <div class="page-heading"><div><p class="eyebrow">YOUR STUDY SPACE</p><h1 id="greeting">Welcome back.</h1><p class="muted">Progress comes from the next useful action, not a perfect plan.</p></div><button class="button button-primary" data-route="planner">＋ Add study task</button></div>
+          <div class="stat-grid">
+            <article class="stat-card"><div class="stat-top"><span>Open tasks</span><span class="stat-symbol symbol-blue">◷</span></div><strong id="statOpenTasks">0</strong><small>Study sessions in your plan</small></article>
+            <article class="stat-card"><div class="stat-top"><span>Cards due</span><span class="stat-symbol symbol-purple">▤</span></div><strong id="statDueCards">0</strong><small>Ready for active recall</small></article>
+            <article class="stat-card"><div class="stat-top"><span>Saved notes</span><span class="stat-symbol symbol-green">✎</span></div><strong id="statNotes">0</strong><small>Your personal knowledge base</small></article>
+            <article class="stat-card"><div class="stat-top"><span>Reviews completed</span><span class="stat-symbol symbol-orange">✓</span></div><strong id="statReviews">0</strong><small>Recorded in this browser</small></article>
+          </div>
+          <div class="content-grid dashboard-grid">
+            <article class="panel panel-large"><div class="panel-heading"><div><h2>Today's plan</h2><p>Start with one achievable task.</p></div><button class="text-button" data-route="planner">View planner →</button></div><div id="dashboardTasks" class="item-list empty-state">No tasks yet. Add one in your study planner.</div></article>
+            <article class="panel"><div class="panel-heading"><div><h2>Flashcards to review</h2><p>Practise before you forget.</p></div><button class="text-button" data-route="flashcards">Review →</button></div><div id="dashboardDue" class="compact-list empty-state">No cards due yet. Create your first deck.</div></article>
+            <article class="panel"><div class="panel-heading"><div><h2>Quick focus timer</h2><p>A small, focused session.</p></div><span class="subtle-pill">FOCUS</span></div><div class="timer-box"><div class="timer-ring"><div><strong id="timerDisplay">25:00</strong><small id="timerState">Ready when you are</small></div></div><div class="timer-controls"><button class="button button-primary" id="timerStart">Start focus</button><button class="button button-quiet" id="timerReset">Reset</button></div><div class="timer-presets"><button class="preset active" data-minutes="25">25 min</button><button class="preset" data-minutes="15">15 min</button><button class="preset" data-minutes="5">5 min</button></div></div></article>
+            <article class="panel"><div class="panel-heading"><div><h2>Recent notes</h2><p>Pick up where you left off.</p></div><button class="text-button" data-route="notes">All notes →</button></div><div id="dashboardNotes" class="compact-list empty-state">Your saved notes will appear here.</div></article>
+          </div>
+          <p class="disclaimer-line"><span>ⓘ</span> The study helper works locally by searching your own notes and flashcards. A live AI service is not configured in this starter.</p>
+        </section>
+
+        <section class="view" id="view-planner" data-view="planner">
+          <div class="page-heading"><div><p class="eyebrow">MAKE THE NEXT STEP CLEAR</p><h1>Study planner</h1><p class="muted">Capture study tasks, set a realistic duration and track completion.</p></div></div>
+          <div class="content-grid planner-grid">
+            <article class="panel form-panel"><div class="panel-heading"><div><h2>Add a study task</h2><p>Keep tasks specific and manageable.</p></div></div>
+              <form id="taskForm" class="stack-form">
+                <label>Task title<input name="title" required maxlength="120" placeholder="e.g. Revise logistic regression"></label>
+                <div class="form-row"><label>Subject<input name="subject" maxlength="60" placeholder="e.g. Machine Learning"></label><label>Duration (min)<input name="minutes" type="number" min="5" max="600" value="30" required></label></div>
+                <div class="form-row"><label>Due date<input name="dueDate" type="date"></label><label>Priority<select name="priority"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></label></div>
+                <button class="button button-primary button-full" type="submit">＋ Add to my plan</button>
+              </form>
+            </article>
+            <article class="panel task-panel"><div class="panel-heading"><div><h2>Your study tasks</h2><p id="taskSummary">No tasks created yet.</p></div><div class="filter-tabs"><button class="filter-tab active" data-task-filter="all">All</button><button class="filter-tab" data-task-filter="open">Open</button><button class="filter-tab" data-task-filter="done">Done</button></div></div><div id="taskList" class="item-list empty-state">Add a task to build your plan.</div></article>
+          </div>
+        </section>
+
+        <section class="view" id="view-flashcards" data-view="flashcards">
+          <div class="page-heading"><div><p class="eyebrow">ACTIVE RECALL</p><h1>Flashcards</h1><p class="muted">Write a question, recall the answer, then rate how difficult it felt.</p></div></div>
+          <div class="content-grid flashcard-grid">
+            <article class="panel form-panel"><div class="panel-heading"><div><h2>Create a card</h2><p>One concept per card works best.</p></div></div><form id="cardForm" class="stack-form"><label>Front / question<textarea name="front" required maxlength="800" rows="3" placeholder="What is logistic regression used for?"></textarea></label><label>Back / answer<textarea name="back" required maxlength="2000" rows="4" placeholder="A classification algorithm that models class probabilities…"></textarea></label><label>Subject<input name="subject" maxlength="60" placeholder="e.g. Machine Learning"></label><button class="button button-primary button-full" type="submit">＋ Save flashcard</button></form></article>
+            <article class="panel review-panel"><div class="panel-heading"><div><h2>Review session</h2><p id="reviewProgress">No flashcards yet.</p></div><span id="reviewDueBadge" class="subtle-pill">0 DUE</span></div><div id="reviewArea" class="review-area empty-state">Create a flashcard to begin practising.</div><div id="reviewControls" class="rating-controls" hidden><button class="rating-button rating-again" data-rate="again">Again<span>Not remembered</span></button><button class="rating-button rating-hard" data-rate="hard">Hard<span>Needed effort</span></button><button class="rating-button rating-good" data-rate="good">Good<span>Recalled it</span></button><button class="rating-button rating-easy" data-rate="easy">Easy<span>Very familiar</span></button></div><div class="review-footer"><button class="text-button" id="showAllCards">Browse all cards</button><span class="muted" id="cardBrowseCount"></span></div></article>
+          </div>
+          <article class="panel card-library-panel"><div class="panel-heading"><div><h2>Card library</h2><p>Manage your questions and answers.</p></div><input id="cardSearch" class="search-input" type="search" placeholder="Search cards…" aria-label="Search flashcards"></div><div id="cardList" class="card-library empty-state">Your cards will be listed here.</div></article>
+        </section>
+
+        <section class="view" id="view-notes" data-view="notes">
+          <div class="page-heading"><div><p class="eyebrow">YOUR KNOWLEDGE BASE</p><h1>Notes library</h1><p class="muted">Capture explanations, examples and the questions you still have.</p></div></div>
+          <div class="content-grid notes-grid">
+            <article class="panel form-panel"><div class="panel-heading"><div><h2>Write a note</h2><p>Use your own words wherever possible.</p></div></div><form id="noteForm" class="stack-form"><label>Title<input name="title" required maxlength="120" placeholder="e.g. Bias-variance trade-off"></label><label>Subject<input name="subject" maxlength="60" placeholder="e.g. Machine Learning"></label><label>Note content<textarea name="content" required maxlength="15000" rows="9" placeholder="Write your notes here…"></textarea></label><button class="button button-primary button-full" type="submit">＋ Save note</button></form></article>
+            <article class="panel notes-panel"><div class="panel-heading"><div><h2>Saved notes</h2><p id="noteSummary">Your notes, organised by subject.</p></div><input id="noteSearch" class="search-input" type="search" placeholder="Search notes…" aria-label="Search notes"></div><div id="noteList" class="note-grid empty-state">No saved notes yet.</div></article>
+          </div>
+        </section>
+
+        <section class="view" id="view-quiz" data-view="quiz">
+          <div class="page-heading"><div><p class="eyebrow">RETRIEVE, DON'T JUST REREAD</p><h1>Practice quiz</h1><p class="muted">Create a short self-test from your own flashcard library.</p></div></div>
+          <div class="content-grid quiz-grid"><article class="panel quiz-intro"><span class="feature-icon icon-purple">▦</span><h2>Test your recall</h2><p>Questions are selected from your saved flashcards. Reveal each answer, then mark whether you remembered it. This is a simple self-check, not an automated AI-generated quiz.</p><div class="quiz-config"><label>Number of questions<select id="quizLength"><option value="5">5 questions</option><option value="10">10 questions</option><option value="20">20 questions</option></select></label><button class="button button-primary" id="startQuiz">Start practice →</button></div><div id="quizMessage" class="muted small-text">You need at least one flashcard before starting.</div></article><article class="panel quiz-session"><div class="panel-heading"><div><h2 id="quizTitle">Your practice session</h2><p id="quizSubtitle">Your quiz results will appear here.</p></div><span class="subtle-pill" id="quizCounter">NOT STARTED</span></div><div id="quizArea" class="quiz-area empty-state">Start a quiz when your cards are ready.</div></article></div>
+        </section>
+
+        <section class="view" id="view-reader" data-view="reader">
+          <div class="page-heading"><div><p class="eyebrow">READ AND ANNOTATE YOUR OWN WAY</p><h1>PDF reader</h1><p class="muted">Open a PDF locally and keep study notes beside it.</p></div></div>
+          <div class="reader-grid"><article class="panel reader-panel"><div class="panel-heading"><div><h2>Document viewer</h2><p>Your selected file is opened in the browser; it is not uploaded.</p></div><label class="button button-primary file-button">Choose PDF<input id="pdfInput" type="file" accept="application/pdf,.pdf" hidden></label></div><div id="pdfEmpty" class="pdf-empty"><div class="pdf-illustration">▱</div><h3>No document selected</h3><p>Choose a PDF from your device. Your browser's built-in viewer will display it here when supported.</p></div><iframe id="pdfFrame" class="pdf-frame" title="Locally selected PDF" hidden></iframe><p class="muted small-text reader-note">This starter does not extract PDF text or run OCR. Add selected facts to your notes manually. The file is not sent to a server by this app.</p></article><article class="panel reader-notes"><div class="panel-heading"><div><h2>Reading notes</h2><p>Capture useful ideas while you read.</p></div></div><form id="readerNoteForm" class="stack-form"><label>Document / topic<input name="title" maxlength="120" placeholder="e.g. Chapter 3 — Probability" required></label><label>Key takeaway<textarea name="content" rows="6" maxlength="10000" placeholder="Write a summary in your own words…" required></textarea></label><button class="button button-primary button-full" type="submit">Save as note</button></form><p class="muted small-text">Saved reading notes appear in your Notes Library.</p></article></div>
+        </section>
+
+        <section class="view" id="view-helper" data-view="helper">
+          <div class="page-heading"><div><p class="eyebrow">SEARCH YOUR OWN KNOWLEDGE</p><h1>Offline study helper</h1><p class="muted">Find related information in saved notes and flashcards without a cloud AI service.</p></div></div>
+          <div class="helper-layout"><article class="panel helper-input-panel"><div class="helper-avatar">⌕</div><h2>What are you studying?</h2><p>Enter a topic or keyword. The helper will search your local notes and flashcards and show matching material.</p><form id="helperForm" class="stack-form"><label>Topic or question<textarea name="query" rows="4" required maxlength="400" placeholder="e.g. Explain overfitting and how to reduce it"></textarea></label><button class="button button-primary button-full" type="submit">Search my study materials →</button></form><div class="helper-privacy">🔒 Search runs locally in this browser. No AI provider is called.</div></article><article class="panel helper-results-panel"><div class="panel-heading"><div><h2>Related material</h2><p>Matches from your saved cards and notes.</p></div></div><div id="helperResults" class="helper-results empty-state">Your search results will appear here.</div></article></div>
+        </section>
+
+        <section class="view" id="view-settings" data-view="settings">
+          <div class="page-heading"><div><p class="eyebrow">YOUR DATA, YOUR CHOICE</p><h1>Data & settings</h1><p class="muted">Back up your work, move it to another browser or reset this workspace.</p></div></div>
+          <div class="settings-grid"><article class="panel settings-card"><span class="feature-icon icon-blue">⇩</span><h2>Export your data</h2><p>Download your tasks, notes, flashcards and review history as a JSON backup.</p><button class="button button-primary" id="exportData">Download backup</button></article><article class="panel settings-card"><span class="feature-icon icon-green">⇧</span><h2>Import a backup</h2><p>Restore a backup you previously exported. Imported data replaces the current workspace.</p><label class="button button-outline file-button">Choose JSON file<input id="importData" type="file" accept="application/json,.json" hidden></label><p id="importStatus" class="muted small-text" aria-live="polite"></p></article><article class="panel settings-card danger-card"><span class="feature-icon icon-orange">!</span><h2>Reset workspace</h2><p>Delete all locally saved tasks, notes, cards and review history from this browser.</p><button class="button button-danger" id="resetData">Delete local data</button></article></div>
+          <article class="panel about-panel"><h2>About this starter</h2><p>RemMind Study Hub is a local-first project scaffold built with HTML, CSS and vanilla JavaScript. It has no configured login system, cloud sync or live LLM integration. Its study helper uses keyword search over saved material.</p><div class="about-meta"><span>Version 1.0.0 · Local-first starter</span><span id="storageStatus">Checking local storage…</span></div></article>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
