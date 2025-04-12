@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c162b">
+  <meta name="description" content="Import, export and analyse your RemMind Study Hub workspace.">
+  <title>Import &amp; analytics — RemMind Study Hub</title>
+  <link rel="stylesheet" href="styles/base.css">
+  <style>
+    .tools-wrap{width:min(1080px,calc(100% - 40px));margin:0 auto;padding:28px 0 60px}
+    .tools-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+    .tools-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:18px}
+    .stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+    .stat{background:#0d182b;border:1px solid #2b3d56;border-radius:12px;padding:14px}
+    .stat b{display:block;font-size:22px;letter-spacing:-.5px}
+    .stat span{color:var(--muted);font-size:11px}
+    .button-row{display:flex;gap:10px;flex-wrap:wrap}
+    table.data{width:100%;border-collapse:collapse;font-size:12px}
+    table.data th,table.data td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+    table.data th{color:var(--muted);font-weight:650;font-size:11px}
+    .table-scroll{overflow-x:auto}
+    .result{margin-top:12px;font-size:12px;color:#c9d6e8}
+    .result ul{margin:6px 0 0;padding-left:18px;color:var(--muted)}
+    .bar{height:8px;border-radius:4px;background:var(--blue);min-width:2px}
+    @media(max-width:800px){.tools-grid{grid-template-columns:1fr}.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  </style>
+</head>
+<body>
+  <main class="tools-wrap">
+    <header class="tools-top">
+      <a class="brand" href="index.html"><span class="brand-mark">R</span><span>RemMind <span class="brand-muted">Study Hub</span></span></a>
+      <a class="button button-quiet" href="app.html">← Back to workspace</a>
+    </header>
+    <p class="eyebrow">TOOLS</p>
+    <h1 style="margin:0 0 6px;letter-spacing:-.8px">Import, export &amp; analytics</h1>
+    <p class="muted" id="storageStatus">Loading your local workspace…</p>
+
+    <section class="stat-grid" id="statGrid" aria-label="Summary"></section>
+
+    <div class="tools-grid">
+      <section class="panel" aria-labelledby="importTitle">
+        <div class="panel-heading"><div><h2 id="importTitle">Import material</h2><p>Paste text or choose a file, preview it, then add it to your workspace.</p></div></div>
+        <div class="stack-form">
+          <label>Format
+            <select id="importFormat">
+              <option value="csv-cards">Flashcards — CSV (front, back, subject)</option>
+              <option value="md-cards">Flashcards — Markdown (Q:/A: or term :: definition)</option>
+              <option value="md-notes">Notes — Markdown (# Title headings)</option>
+            </select>
+          </label>
+          <label>Paste content <textarea id="importText" rows="7" placeholder="front,back,subject&#10;What is a primary key?,A unique row identifier,Databases"></textarea></label>
+          <label class="button button-outline file-button">Choose a file <input type="file" id="importFile" accept=".csv,.md,.markdown,.txt,text/*"></label>
+          <div class="button-row">
+            <button class="button button-quiet" id="previewBtn" type="button">Preview</button>
+            <button class="button button-primary" id="addBtn" type="button" disabled>Add to workspace</button>
+          </div>
+        </div>
+        <div class="result" id="importResult" aria-live="polite"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="exportTitle">
+        <div class="panel-heading"><div><h2 id="exportTitle">Export</h2><p>Download readable copies of your cards and notes. Use the workspace backup for a full restore.</p></div></div>
+        <div class="button-row">
+          <button class="button button-quiet" id="exportCardsCsv" type="button">Cards (.csv)</button>
+          <button class="button button-quiet" id="exportCardsMd" type="button">Cards (.md)</button>
+          <button class="button button-quiet" id="exportNotesMd" type="button">Notes (.md)</button>
+        </div>
+        <div class="result" id="exportResult" aria-live="polite"></div>
+        <h2 style="margin:22px 0 8px;font-size:13px">Next due card — SM-2 preview</h2>
+        <p class="muted small-text" id="sm2Preview">No cards yet.</p>
+      </section>
+    </div>
+
+    <section class="panel" aria-labelledby="forecastTitle" style="margin-bottom:18px">
+      <div class="panel-heading"><div><h2 id="forecastTitle">Seven-day workload</h2><p id="forecastNote"></p></div></div>
+      <div class="table-scroll"><table class="data"><thead><tr><th>Day</th><th>Tasks</th><th>Time</th><th style="width:40%">Load</th></tr></thead><tbody id="forecastBody"></tbody></table></div>
+    </section>
+
+    <section class="panel" aria-labelledby="subjectTitle">
+      <div class="panel-heading"><div><h2 id="subjectTitle">By subject</h2><p>Subjects are matched without regard to capitalisation; empty subjects appear as General.</p></div></div>
+      <div class="table-scroll"><table class="data"><thead><tr><th>Subject</th><th>Open tasks</th><th>Open time</th><th>Cards</th><th>Due</th><th>Notes</th></tr></thead><tbody id="subjectBody"></tbody></table></div>
+    </section>
+  </main>
+  <script type="module" src="src/tools-page.js"></script>
+</body>
+</html>
