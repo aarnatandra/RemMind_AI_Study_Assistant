@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RemMind AI — 10-Page All-in-One Spaced Repetition & Study Assistant</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: #0B0F19;
+      color: #F8FAFC;
+      overflow-x: hidden;
+    }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.4); }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.5); border-radius: 9999px; }
+    .rem-bullet { position: relative; }
+    .rem-bullet::before {
+      content: '';
+      position: absolute;
+      left: -14px;
+      top: 12px;
+      bottom: -8px;
+      width: 1.5px;
+      background: rgba(100, 116, 139, 0.25);
+    }
+    .card-3d { transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease; }
+    .card-3d:hover { transform: translateY(-2px); }
+    .cloze-pill {
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px dashed #818CF8;
+      color: #C7D2FE;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85em;
+    }
+    .concept-pill {
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: #6EE7B7;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .forward-pill {
+      background: rgba(6, 182, 212, 0.16);
+      border: 1px solid rgba(6, 182, 212, 0.45);
+      color: #67E8F9;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .occlusion-box { cursor: pointer; transition: all 0.2s ease; }
+    .occlusion-box:hover { filter: brightness(1.15); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+
+  <!-- Top Global Header & 10-Page Quick Switcher Ribbon -->
+  <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md">
+    <div class="max-w-[1600px] mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <button id="mobileMenuBtn" onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200" aria-label="Toggle navigation">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="flex items-center gap-2.5 cursor-pointer" onclick="navigateTo('dashboard')">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 font-bold text-white text-lg">R</div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold tracking-tight text-white text-base">RemMind AI</span>
+              <span class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">10-Page Suite</span>
+            </div>
+            <p class="text-[11px] text-slate-400 hidden sm:block">Notes, Spaced Repetition, PDF Reader & AI Tutor</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Universal Search / Command Palette Trigger -->
+      <div class="flex-1 max-w-md mx-2 hidden md:block">
+        <button onclick="openCommandModal()" class="w-full flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 text-slate-400 text-xs transition">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <span>Search Rems, Flashcards, PDFs, or jump to any of the 10 pages...</span>
+          </span>
+          <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-slate-900 text-slate-300 rounded border border-slate-700">Ctrl K</kbd>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-medium">
+          <span>🔥</span><span id="headerStreakCount">18</span><span class="hidden md:inline">d streak</span>
+        </div>
+        <button onclick="navigateTo('flashcards')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition">
+          <span>⚡ Queue</span>
+          <span id="headerDueBadge" class="px-1.5 py-0.2 rounded-full bg-indigo-900/80 text-indigo-200 text-[11px]">9</span>
+        </button>
+        <button onclick="resetDemoState()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700" title="Reset sample data">↺ Reset</button>
+      </div>
+    </div>
+
+    <div class="border-t border-slate-800/60 bg-slate-950/70 px-3 sm:px-6 py-1.5 overflow-x-auto custom-scroll">
+      <div class="max-w-[1600px] mx-auto flex items-center gap-1.5 min-w-max" id="topPageRibbon"></div>
+    </div>
+  </header>
+
+  <div class="flex-1 flex max-w-[1600px] w-full mx-auto relative">
+    <!-- Left Sidebar Navigation -->
+    <aside id="sidebarNav" class="w-64 shrink-0 border-r border-slate-800/80 bg-slate-900/60 hidden lg:flex flex-col justify-between p-3 select-none">
+      <div class="space-y-4">
+        <div class="p-3 rounded-xl bg-gradient-to-r from-indigo-950/80 to-slate-900 border border-indigo-500/30">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-indigo-300 font-semibold" id="sidebarPageIndicator">Page 1 of 10</span>
+            <div class="flex items-center gap-1">
+              <button onclick="stepPage(-1)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200">◀</button>
+              <button onclick="stepPage(1)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200">▶</button>
+            </div>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1 truncate" id="sidebarPageTitle">1. Daily Learning Hub</p>
+        </div>
+
+        <div>
+          <div class="px-2 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">10 Study Workspace Pages</div>
+          <nav class="space-y-1" id="sidebarPageList"></nav>
+        </div>
+
+        <div class="pt-2 border-t border-slate-800/80">
+          <div class="px-2 mb-1.5 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <span>Document Folders</span>
+            <button onclick="QuickCreateDoc()" class="text-indigo-400 hover:text-indigo-300 font-bold">+ Doc</button>
+          </div>
+          <div class="space-y-1 text-xs" id="sidebarDocList"></div>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800/80 text-xs text-slate-400 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>FSRS-4.5 Scheduler</span>
+          </span>
+          <span class="font-mono text-[11px] text-slate-300" id="sidebarTotalCards">9 cards</span>
+        </div>
+        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+          <div class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full" style="width: 78%"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Dynamic Viewport -->
+    <main class="flex-1 min-w-0 p-3 sm:p-6 overflow-y-auto">
+
+      <!-- PAGE 1: DASHBOARD -->
+      <section id="page-dashboard" class="page-view space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-medium mb-2">
+              <span>Page 1 of 10 • RemNote All-in-One Workspace</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Good afternoon, Scholar 👋</h1>
+            <p class="text-slate-400 text-sm mt-0.5">Your Daily Learning Queue, Rems, PDF annotations, and Exam Scheduler are synced.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="navigateTo('flashcards')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-sm shadow-lg transition flex items-center gap-2">
+              <span>⚡ Practice Due Queue</span>
+              <span id="dashDueBtnCount" class="px-2 py-0.5 rounded-full bg-black/30 text-xs">7 Due</span>
+            </button>
+            <button onclick="navigateTo('ai-generator')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 font-medium text-sm transition">
+              ✨ AI Card Generator
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 card-3d">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>TODAY'S QUEUE</span>
+              <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold">FSRS v4.5</span>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+              <span id="dashMetricDue" class="text-3xl font-bold text-white">7</span>
+              <span class="text-xs text-slate-400">cards due now</span>
+            </div>
+            <p class="mt-3 text-[11px] text-slate-400" id="dashReviewedTodayText">10 reviewed today • Est. 3 mins left</p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 card-3d">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>KNOWLEDGE BASE REMS</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold">Synced</span>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+              <span id="dashMetricRems" class="text-3xl font-bold text-white">10</span>
+              <span class="text-xs text-slate-400">connected Rems</span>
+            </div>
+            <button onclick="navigateTo('outliner')" class="mt-3 text-[11px] text-indigo-400 hover:underline">Open Outliner Editor →</button>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 card-3d">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>LONG-TERM RETENTION</span>
+              <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-semibold">+4.2% wk</span>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+              <span class="text-3xl font-bold text-white">93.4%</span>
+              <span class="text-xs text-slate-400">recall accuracy</span>
+            </div>
+            <button onclick="navigateTo('exam-scheduler')" class="mt-3 text-[11px] text-cyan-400 hover:underline">View Forgetting Curve →</button>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 card-3d">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>NEXT EXAM TARGET</span>
+              <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">14 Days Left</span>
+            </div>
+            <div class="mt-2 flex items-baseline gap-2">
+              <span class="text-xl font-bold text-white truncate">MCAT Cellular Bio</span>
+            </div>
+            <button onclick="navigateTo('exam-scheduler')" class="mt-3 text-[11px] text-amber-400 hover:underline">Open Exam Scheduler →</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4">
+            <h2 class="text-base font-bold text-white">📝 Quick Daily Rem & Flashcard Capture <span class="text-xs font-normal text-slate-400">(Use <code class="text-emerald-400 font-mono">::</code>, <code class="text-cyan-400 font-mono">&gt;&gt;</code>, or <code class="text-indigo-400 font-mono">{{cloze}}</code>)</span></h2>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input id="quickCaptureInput" type="text" placeholder="e.g. Oxidative Phosphorylation :: ATP synthesis driven by electron transport chain proton gradient" class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500" />
+              <select id="quickCaptureDeck" class="px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-200">
+                <option value="MCAT Biology">MCAT Biology</option>
+                <option value="CS Algorithms">CS Algorithms</option>
+                <option value="Cognitive Neuroscience">Cognitive Neuroscience</option>
+                <option value="Organic Chemistry">Organic Chemistry</option>
+              </select>
+              <button onclick="handleQuickCapture()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs whitespace-nowrap">+ Add Rem & Card</button>
+            </div>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <button onclick="fillQuickSample('Mitochondrial Matrix :: Site of the Citric Acid (Krebs) Cycle in eukaryotes')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 font-mono">Concept :: Definition</button>
+              <button onclick="fillQuickSample('What is the time complexity of Merge Sort? >> O(n log n) worst-case and average-case')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 font-mono">Question &gt;&gt; Answer</button>
+              <button onclick="fillQuickSample('The {{hippocampus}} consolidates short-term declarative memories into {{long-term cortex}} storage.')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono">{{Cloze}} Blank</button>
+            </div>
+            <div class="pt-3 border-t border-slate-800">
+              <div class="text-xs font-semibold text-slate-400 mb-2">RECENTLY CREATED REMS & AUTO-GENERATED CARDS</div>
+              <div id="dashRecentRemsList" class="space-y-2 max-h-52 overflow-y-auto custom-scroll"></div>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <h2 class="text-base font-bold text-white">🧭 Explore All 10 Study Pages</h2>
+              <div class="mt-3 space-y-1.5 max-h-72 overflow-y-auto custom-scroll pr-1" id="dashPageDirectory"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 2: HIERARCHICAL OUTLINER -->
+      <section id="page-outliner" class="page-view hidden space-y-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-medium mb-1">
+              <span>Page 2 of 10 • Hierarchical Rem Outliner & Flashcard Syntax</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mt-1">
+              <span>Document:</span>
+              <select id="outlinerDocSelect" onchange="switchActiveDocument(this.value)" class="bg-slate-800 border border-slate-700 text-white rounded-lg px-2.5 py-1 font-semibold text-xs"></select>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="insertSyntaxToken(' :: ')" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-semibold">+ :: Concept</button>
+            <button onclick="insertSyntaxToken(' >> ')" class="px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-semibold">+ &gt;&gt; Card</button>
+            <button onclick="insertSyntaxToken(' {{cloze}} ')" class="px-3 py-1.5 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-mono font-semibold">+ {{Cloze}}</button>
+            <button onclick="aiExpandCurrentDocument()" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">✨ AI Expand Rems</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h2 id="activeDocTitleHeading" class="text-xl font-bold text-white">Cellular Bioenergetics & ATP Synthesis</h2>
+              <span id="outlinerCardCountBadge" class="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-semibold">5 Cards in Doc</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row gap-2">
+              <select id="newRemIndentLevel" class="px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-300">
+                <option value="0">Level 1 (Root Rem)</option>
+                <option value="1">↳ Level 2 (Child Rem)</option>
+                <option value="2">↳↳ Level 3 (Sub-Rem)</option>
+              </select>
+              <input id="outlinerNewRemInput" type="text" placeholder="Write a Rem bullet... Use 'Concept :: Definition', 'Prompt >> Answer', or '{{cloze}}'" class="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white" />
+              <button onclick="addRemToActiveDoc()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">+ Add Rem</button>
+            </div>
+            <div id="outlinerTreeContainer" class="space-y-2 pl-3"></div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold text-white">🃏 Auto-Generated Cards in Note</h3>
+                <button onclick="navigateTo('flashcards')" class="text-xs text-indigo-400 hover:underline">Study All →</button>
+              </div>
+              <div id="outlinerLiveCardsPreview" class="space-y-2 max-h-72 overflow-y-auto custom-scroll"></div>
+            </div>
+            <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800">
+              <h3 class="text-sm font-bold text-white mb-2">🔗 Linked Portals & Backlinks</h3>
+              <div id="outlinerBacklinksList" class="space-y-2 text-xs"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 3: SPACED REPETITION FLASHCARDS -->
+      <section id="page-flashcards" class="page-view hidden space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-medium mb-1">
+              <span>Page 3 of 10 • FSRS Spaced Repetition Arena</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white">Active Recall Flashcard Queue</h1>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="queueDeckFilter" onchange="filterFlashcardQueue(this.value)" class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200">
+              <option value="ALL">All Decks (Full Queue)</option>
+              <option value="MCAT Biology">MCAT Biology</option>
+              <option value="CS Algorithms">CS Algorithms</option>
+              <option value="Cognitive Neuroscience">Cognitive Neuroscience</option>
+              <option value="Organic Chemistry">Organic Chemistry</option>
+            </select>
+            <button onclick="shuffleFlashcardQueue()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-200">🔀 Shuffle Queue</button>
+          </div>
+        </div>
+
+        <div class="max-w-3xl mx-auto space-y-4">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span id="fcQueueCounterText">Card 1 of 9</span>
+            <span id="fcCurrentDeckBadge" class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold">MCAT Biology</span>
+            <span id="fcStabilityText" class="font-mono text-slate-300">Interval: 4d • Ease: 250%</span>
+          </div>
+          <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div id="fcSessionProgressBar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full transition-all duration-300" style="width: 15%"></div>
+          </div>
+
+          <div class="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-700/80 shadow-2xl min-h-[320px] flex flex-col justify-between">
+            <div class="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 pb-3">
+              <span id="fcBreadcrumbPath" class="font-mono">MCAT Biology › Active Recall</span>
+              <span id="fcCardTypePill" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[11px]">Concept ::</span>
+            </div>
+
+            <div class="my-6 text-center space-y-4">
+              <div class="text-xs uppercase tracking-widest text-slate-400 font-semibold">Prompt / Active Recall</div>
+              <div id="fcFrontText" class="text-xl sm:text-2xl font-bold text-white">Oxidative Phosphorylation</div>
+
+              <div id="fcAnswerContainer" class="hidden pt-6 mt-6 border-t border-slate-800/90 space-y-4 text-left">
+                <div class="text-xs uppercase tracking-widest text-emerald-400 font-semibold text-center">Answer / Descriptor</div>
+                <div id="fcBackText" class="text-base sm:text-lg text-slate-100 bg-slate-950/80 p-4 rounded-2xl border border-slate-800 text-center"></div>
+                <div class="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <span class="font-semibold text-indigo-300">✨ RemMind AI Explanation & Memory Hook</span>
+                    <button onclick="generateExtraMnemonic()" class="text-[11px] text-cyan-300 hover:underline">+ Generate Alternative Mnemonic</button>
+                  </div>
+                  <p id="fcAiExplanationText" class="text-slate-300 leading-relaxed"></p>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-800">
+              <div id="fcRevealBtnWrapper" class="flex justify-center">
+                <button onclick="revealFlashcardAnswer()" class="w-full sm:w-auto min-w-[240px] px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg transition">👁️ Show Answer (or press Space)</button>
+              </div>
+              <div id="fcRatingBtnsWrapper" class="hidden grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <button onclick="rateCurrentCard('again')" class="p-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-center">
+                  <div class="text-xs font-bold text-rose-300">1 • Again</div>
+                  <div class="text-[11px] font-mono text-rose-200/80">&lt; 10m</div>
+                </button>
+                <button onclick="rateCurrentCard('hard')" class="p-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-center">
+                  <div class="text-xs font-bold text-amber-300">2 • Hard</div>
+                  <div id="fcIntHard" class="text-[11px] font-mono text-amber-200/80">2d</div>
+                </button>
+                <button onclick="rateCurrentCard('good')" class="p-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-center">
+                  <div class="text-xs font-bold text-emerald-300">3 • Good</div>
+                  <div id="fcIntGood" class="text-[11px] font-mono text-emerald-200/80">6d</div>
+                </button>
+                <button onclick="rateCurrentCard('easy')" class="p-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-center">
+                  <div class="text-xs font-bold text-cyan-300">4 • Easy</div>
+                  <div id="fcIntEasy" class="text-[11px] font-mono text-cyan-200/80">15d</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 4: PDF ANNOTATOR -->
+      <section id="page-pdf-reader" class="page-view hidden space-y-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-medium mb-1">
+              <span>Page 4 of 10 • Split-Screen PDF Reader & Highlight-to-Flashcard</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white">PDF & Textbook Annotator</h1>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="pdfSourceSelect" onchange="switchPdfDocument(this.value)" class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white">
+              <option value="bio_pdf">📄 Lehninger_Bioenergetics_Ch19.pdf</option>
+              <option value="cs_pdf">📄 CLRS_Graph_Algorithms_Ch22.pdf</option>
+              <option value="neuro_pdf">📄 Kandel_Synaptic_Transmission_Ch10.pdf</option>
+            </select>
+            <button onclick="aiSummarizeActivePdf()" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">✨ AI Summarize PDF</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <div class="lg:col-span-7 p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800 text-xs">
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-400">Highlight Color:</span>
+                <button onclick="setHighlightColor('yellow')" id="hlBtn-yellow" class="px-2.5 py-1 rounded bg-amber-400/20 border border-amber-400 text-amber-200">Yellow (Core)</button>
+                <button onclick="setHighlightColor('emerald')" id="hlBtn-emerald" class="px-2.5 py-1 rounded bg-emerald-400/20 border border-slate-700 text-emerald-200">Green (Def)</button>
+                <button onclick="setHighlightColor('purple')" id="hlBtn-purple" class="px-2.5 py-1 rounded bg-purple-400/20 border border-slate-700 text-purple-200">Purple (Exam)</button>
+              </div>
+              <span class="text-slate-400">Click any paragraph below to toggle highlight</span>
+            </div>
+            <div id="pdfDocumentViewport" class="space-y-4 p-4 rounded-xl bg-slate-950 border border-slate-800 text-sm leading-relaxed"></div>
+          </div>
+
+          <div class="lg:col-span-5 space-y-4">
+            <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-white">📌 Extracted PDF Highlights & Cards</h3>
+                <span id="pdfHighlightCountBadge" class="text-xs text-cyan-400 font-mono">3 highlights</span>
+              </div>
+              <div id="pdfHighlightsSidebarList" class="space-y-2.5 max-h-64 overflow-y-auto custom-scroll"></div>
+            </div>
+            <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-white">🤖 High-Yield AI Section Summary</h3>
+                <button onclick="convertPdfSummaryToCards()" class="text-xs text-indigo-400 hover:underline">+ Convert All to Cards</button>
+              </div>
+              <div id="pdfAiSummaryBox" class="text-xs text-slate-300 space-y-1.5 bg-slate-950 p-3 rounded-xl border border-slate-800"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 5: AI CARD STUDIO -->
+      <section id="page-ai-generator" class="page-view hidden space-y-6">
+        <div class="pb-4 border-b border-slate-800">
+          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs font-medium mb-1">
+            <span>Page 5 of 10 • AI PDF / YouTube / Lecture-to-Flashcards Studio</span>
+          </div>
+          <h1 class="text-2xl font-bold text-white">One-Click AI Study Material Generator</h1>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-5 p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <div class="flex flex-wrap gap-1.5">
+              <button onclick="loadAiSourcePreset('mit_bio')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-indigo-300 border border-slate-700">🧬 MIT Bioenergetics</button>
+              <button onclick="loadAiSourcePreset('stanford_cs')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-cyan-300 border border-slate-700">💻 CS229 Gradient Descent</button>
+              <button onclick="loadAiSourcePreset('neuro_yt')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-emerald-300 border border-slate-700">🧠 YouTube: Synaptic Plasticity</button>
+            </div>
+            <textarea id="aiSourceTextarea" rows="7" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-200"></textarea>
+            <div class="grid grid-cols-2 gap-3">
+              <select id="aiGenFormatSelect" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white">
+                <option value="mixed">Mixed (Concept :: + Cloze)</option>
+                <option value="concept">Concept :: Descriptor Only</option>
+                <option value="cloze">{{Cloze}} Fill-in-the-Blank</option>
+                <option value="qa">Question &gt;&gt; Answer</option>
+              </select>
+              <select id="aiGenTargetDeck" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white">
+                <option value="MCAT Biology">MCAT Biology</option>
+                <option value="CS Algorithms">CS Algorithms</option>
+                <option value="Cognitive Neuroscience">Cognitive Neuroscience</option>
+                <option value="Organic Chemistry">Organic Chemistry</option>
+              </select>
+            </div>
+            <button onclick="runAiCardGeneration()" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-600 text-white font-bold text-sm shadow-lg">✨ Generate AI Flashcards</button>
+          </div>
+
+          <div class="lg:col-span-7 p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 class="text-base font-bold text-white">Generated Study Cards Preview</h3>
+              <button onclick="importAllGeneratedCards()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">+ Add All to Queue</button>
+            </div>
+            <div id="aiGeneratedResultsContainer" class="space-y-2.5 max-h-96 overflow-y-auto custom-scroll"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 6: PRACTICE QUIZ -->
+      <section id="page-quiz" class="page-view hidden space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-medium mb-1">
+              <span>Page 6 of 10 • Section Practice Quiz & Active Testing</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white">AI Practice Quiz & Diagnostic</h1>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="quizScoreBadge" class="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold">Score: 0 / 0</span>
+            <button onclick="resetPracticeQuiz()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700">↺ New Quiz Set</button>
+          </div>
+        </div>
+
+        <div class="max-w-3xl mx-auto p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span id="quizProgressLabel">Question 1 of 3</span>
+            <span id="quizTopicTag" class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold">Bioenergetics</span>
+          </div>
+          <h2 id="quizQuestionPrompt" class="text-lg sm:text-xl font-bold text-white"></h2>
+          <div id="quizOptionsList" class="space-y-2.5"></div>
+          <div id="quizFeedbackBox" class="hidden p-4 rounded-2xl bg-slate-950 border border-slate-700 space-y-3">
+            <div id="quizFeedbackHeadline" class="text-sm font-bold text-emerald-400"></div>
+            <p id="quizFeedbackExplanation" class="text-xs text-slate-300 leading-relaxed"></p>
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
+              <button onclick="convertCurrentQuizToCard()" class="px-3 py-1.5 rounded-lg bg-indigo-600/30 border border-indigo-500/40 text-indigo-200 text-xs font-semibold">+ Convert into Spaced Repetition Card</button>
+              <button onclick="nextQuizQuestion()" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">Next Question →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 7: IMAGE OCCLUSION -->
+      <section id="page-occlusion" class="page-view hidden space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-medium mb-1">
+              <span>Page 7 of 10 • Interactive Image Occlusion Flashcards</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white">Image Occlusion Studio</h1>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="toggleAllOcclusionMasks(true)" class="px-3 py-1.5 rounded-xl bg-rose-600/20 border border-rose-500/40 text-rose-300 text-xs font-semibold">🙈 Hide All Labels</button>
+            <button onclick="toggleAllOcclusionMasks(false)" class="px-3 py-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold">👁️ Reveal All Labels</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-8 p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center">
+            <div class="w-full bg-slate-950 rounded-2xl border border-slate-800 p-4 flex justify-center">
+              <svg viewBox="0 0 760 400" class="w-full max-w-[740px] h-auto select-none">
+                <rect x="20" y="20" width="720" height="360" rx="40" fill="#0f172a" stroke="#4f46e5" stroke-width="3"/>
+                <text x="45" y="52" fill="#94a3b8" font-size="13" font-weight="600">OUTER MITOCHONDRIAL MEMBRANE</text>
+                <rect x="45" y="70" width="670" height="85" rx="16" fill="#312e81" fill-opacity="0.35" stroke="#6366f1" stroke-dasharray="6,4"/>
+                <text x="65" y="102" fill="#a5b4fc" font-size="12" font-weight="600">High [H+] Proton Gradient Zone</text>
+                <rect x="45" y="170" width="670" height="65" rx="12" fill="#064e3b" fill-opacity="0.55" stroke="#10b981" stroke-width="2"/>
+                <rect x="85" y="160" width="95" height="85" rx="12" fill="#2563eb" stroke="#93c5fd" stroke-width="2"/>
+                <text x="103" y="207" fill="#ffffff" font-size="12" font-weight="700">Complex I</text>
+                <rect x="220" y="160" width="95" height="85" rx="12" fill="#7c3aed" stroke="#c4b5fd" stroke-width="2"/>
+                <text x="235" y="207" fill="#ffffff" font-size="12" font-weight="700">Complex III</text>
+                <rect x="355" y="160" width="95" height="85" rx="12" fill="#0891b2" stroke="#67e8f9" stroke-width="2"/>
+                <text x="370" y="207" fill="#ffffff" font-size="12" font-weight="700">Complex IV</text>
+                <rect x="530" y="145" width="145" height="125" rx="18" fill="#d97706" stroke="#fde68a" stroke-width="2.5"/>
+                <text x="65" y="310" fill="#cbd5e1" font-size="13" font-weight="600">TCA / Krebs Cycle &amp; NADH Oxidation</text>
+                <g class="occlusion-box" onclick="toggleSingleOcclusion(0)">
+                  <rect id="occRect-0" x="450" y="80" width="245" height="44" rx="8" fill="#f43f5e" stroke="#fecdd3" stroke-width="2"/>
+                  <text id="occText-0" x="572" y="107" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">[#1 Click to Reveal]</text>
+                </g>
+                <g class="occlusion-box" onclick="toggleSingleOcclusion(1)">
+                  <rect id="occRect-1" x="65" y="255" width="230" height="38" rx="8" fill="#f43f5e" stroke="#fecdd3" stroke-width="2"/>
+                  <text id="occText-1" x="180" y="279" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">[#2 Click to Reveal]</text>
+                </g>
+                <g class="occlusion-box" onclick="toggleSingleOcclusion(2)">
+                  <rect id="occRect-2" x="285" y="118" width="150" height="36" rx="8" fill="#f43f5e" stroke="#fecdd3" stroke-width="2"/>
+                  <text id="occText-2" x="360" y="141" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">[#3 Click to Reveal]</text>
+                </g>
+                <g class="occlusion-box" onclick="toggleSingleOcclusion(3)">
+                  <rect id="occRect-3" x="542" y="182" width="122" height="50" rx="8" fill="#f43f5e" stroke="#fecdd3" stroke-width="2"/>
+                  <text id="occText-3" x="603" y="212" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">[#4 Click to Reveal]</text>
+                </g>
+                <g class="occlusion-box" onclick="toggleSingleOcclusion(4)">
+                  <rect id="occRect-4" x="455" y="310" width="240" height="44" rx="8" fill="#f43f5e" stroke="#fecdd3" stroke-width="2"/>
+                  <text id="occText-4" x="575" y="337" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">[#5 Click to Reveal]</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+          <div class="lg:col-span-4 p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+            <h3 class="text-base font-bold text-white">🎯 Occlusion Labels & Cards</h3>
+            <div id="occlusionItemsList" class="space-y-2.5"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 8: AI TUTOR CHAT -->
+      <section id="page-ai-tutor" class="page-view hidden space-y-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-medium mb-1">
+              <span>Page 8 of 10 • Personal AI Tutor Grounded in Your Rems</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white">RemMind AI Socratic Tutor</h1>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <button onclick="sendQuickTutorPrompt('Explain Chemiosmosis using an everyday analogy')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-indigo-300 border border-slate-700">💡 Analogy</button>
+            <button onclick="sendQuickTutorPrompt('Quiz me Socratically on Graph Shortest Path Algorithms')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-cyan-300 border border-slate-700">🎯 Socratic Quiz</button>
+            <button onclick="sendQuickTutorPrompt('Create a memorable acronym for the Citric Acid Cycle intermediates')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-emerald-300 border border-slate-700">🧠 Mnemonic</button>
+          </div>
+        </div>
+
+        <div class="max-w-4xl mx-auto rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden flex flex-col h-[500px]">
+          <div id="aiTutorMessages" class="flex-1 p-5 overflow-y-auto custom-scroll space-y-4"></div>
+          <div class="p-3.5 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
+            <input id="aiTutorInput" type="text" placeholder="Ask anything about your notes, request a mnemonic, or ask to be quizzed..." class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white" />
+            <button onclick="handleSendTutorMessage()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs">Send ↵</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 9: CARD TABLE DATABASE -->
+      <section id="page-card-table" class="page-view hidden space-y-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-medium mb-1">
+              <span>Page 9 of 10 • RemNote Card Table & Bulk Knowledge Manager</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white">Card Table & Database</h1>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <input id="cardTableSearchInput" oninput="renderCardTablePage()" type="text" placeholder="Filter front, back, or deck..." class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white" />
+            <select id="cardTableStatusFilter" onchange="renderCardTablePage()" class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200">
+              <option value="ALL">All Mastery States</option>
+              <option value="Mastered">Mastered</option>
+              <option value="Learning">Learning</option>
+              <option value="Due">Due Now</option>
+            </select>
+            <button onclick="openNewCardModal()" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">+ New Flashcard</button>
+          </div>
+        </div>
+
+        <div class="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden">
+          <div class="overflow-x-auto custom-scroll">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-950/90 text-slate-400 border-b border-slate-800 uppercase tracking-wider text-[11px]">
+                  <th class="py-3 px-4">Front / Concept Prompt</th>
+                  <th class="py-3 px-4">Back / Descriptor Answer</th>
+                  <th class="py-3 px-4">Deck</th>
+                  <th class="py-3 px-4">Type</th>
+                  <th class="py-3 px-4 text-right">Interval</th>
+                  <th class="py-3 px-4 text-center">Status</th>
+                  <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="cardTableBody" class="divide-y divide-slate-800/70"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 10: EXAM SCHEDULER & FORGETTING CURVES -->
+      <section id="page-exam-scheduler" class="page-view hidden space-y-6">
+        <div class="pb-4 border-b border-slate-800">
+          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-medium mb-1">
+            <span>Page 10 of 10 • Exam Scheduler & Ebbinghaus Retention Curves</span>
+          </div>
+          <h1 class="text-2xl font-bold text-white">Exam Scheduler & Mastery Analytics</h1>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-5 space-y-4">
+            <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+              <h3 class="text-sm font-bold text-white">🗓️ Add New Exam Target</h3>
+              <input id="examTitleInput" type="text" placeholder="Exam Name (e.g. USMLE Step 1 / Algorithms Final)" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+              <div class="grid grid-cols-2 gap-2">
+                <input id="examDaysInput" type="number" value="21" min="2" max="180" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+                <select id="examTargetRetInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white">
+                  <option value="95">95% (Exam Peak)</option>
+                  <option value="90">90% (High Yield)</option>
+                  <option value="85">85% (Standard)</option>
+                </select>
+              </div>
+              <button onclick="addExamScheduleItem()" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">+ Calculate Daily Exam Plan</button>
+            </div>
+            <div id="examSchedulesList" class="space-y-3"></div>
+          </div>
+
+          <div class="lg:col-span-7 space-y-5">
+            <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+              <h3 class="text-sm font-bold text-white mb-3">📈 Fight the Forgetting Curve (FSRS Spaced Repetition vs Cramming)</h3>
+              <div class="relative h-64 w-full"><canvas id="retentionChartCanvas"></canvas></div>
+            </div>
+            <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+              <h3 class="text-sm font-bold text-white mb-3">📊 Mastery Breakdown by Subject Deck</h3>
+              <div class="relative h-56 w-full"><canvas id="deckMasteryChartCanvas"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Command Palette Modal -->
+  <div id="commandModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-start justify-center pt-16 px-4">
+    <div class="w-full max-w-xl rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl overflow-hidden">
+      <div class="p-3.5 border-b border-slate-800 flex items-center gap-2">
+        <input id="commandSearchInput" oninput="renderCommandPaletteResults()" type="text" placeholder="Jump to any of the 10 pages..." class="flex-1 bg-transparent text-sm text-white focus:outline-none" />
+        <button onclick="closeCommandModal()" class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-xs">Esc</button>
+      </div>
+      <div id="commandResultsList" class="p-3 max-h-80 overflow-y-auto custom-scroll space-y-1.5"></div>
+    </div>
+  </div>
+
+  <!-- New Flashcard Modal -->
+  <div id="newCardModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-white">Create Custom Flashcard</h3>
+        <button onclick="closeNewCardModal()" class="text-slate-400 hover:text-white text-sm">✕</button>
+      </div>
+      <input id="modalCardFront" type="text" placeholder="Front (Concept or Question)" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
+      <textarea id="modalCardBack" rows="3" placeholder="Back (Definition or Answer)" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white"></textarea>
+      <select id="modalCardDeck" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white">
+        <option value="MCAT Biology">MCAT Biology</option>
+        <option value="CS Algorithms">CS Algorithms</option>
+        <option value="Cognitive Neuroscience">Cognitive Neuroscience</option>
+        <option value="Organic Chemistry">Organic Chemistry</option>
+      </select>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeNewCardModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">Cancel</button>
+        <button onclick="saveModalNewCard()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">Save Card</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Banner -->
+  <div id="toastBanner" class="fixed bottom-5 right-5 z-50 hidden px-4 py-3 rounded-xl bg-indigo-600 text-white text-xs font-semibold shadow-2xl">
+    <span id="toastMessageText">Saved!</span>
+  </div>
+
+  <script>
+    const PAGES = [
+      { id: 'dashboard', num: 1, icon: '🏠', short: '1. Dashboard', title: '1. Daily Learning Hub', desc: 'Queue overview, streak & quick capture' },
+      { id: 'outliner', num: 2, icon: '📝', short: '2. Rem Outliner', title: '2. Hierarchical Outliner', desc: 'Notes with ::, >>, and {{cloze}} cards' },
+      { id: 'flashcards', num: 3, icon: '⚡', short: '3. Spaced Repetition', title: '3. Flashcard Queue (FSRS)', desc: 'Active recall with SM-2 / FSRS intervals' },
+      { id: 'pdf-reader', num: 4, icon: '📄', short: '4. PDF Annotator', title: '4. PDF Reader & Annotator', desc: 'Split-screen highlights to flashcards' },
+      { id: 'ai-generator', num: 5, icon: '✨', short: '5. AI Card Studio', title: '5. AI PDF/YouTube to Cards', desc: 'One-click lecture to cards & summary' },
+      { id: 'quiz', num: 6, icon: '🎯', short: '6. Practice Quiz', title: '6. Interactive Practice Quiz', desc: 'Multiple-choice active testing & rationale' },
+      { id: 'occlusion', num: 7, icon: '🖼️', short: '7. Image Occlusion', title: '7. Image Occlusion Lab', desc: 'Interactive diagram masks for visual recall' },
+      { id: 'ai-tutor', num: 8, icon: '🤖', short: '8. AI Tutor Chat', title: '8. AI Socratic Tutor', desc: 'Context-aware study chat & mnemonics' },
+      { id: 'card-table', num: 9, icon: '🗂️', short: '9. Card Table DB', title: '9. Card Table Database', desc: 'Search, filter & manage all flashcards' },
+      { id: 'exam-scheduler', num: 10, icon: '📅', short: '10. Exam Scheduler', title: '10. Exam Scheduler & Curves', desc: 'Exam countdown & forgetting curve charts' }
+    ];
+
+    const DEFAULT_STATE = {
+      activePage: 'dashboard',
+      streak: 18,
+      reviewedToday: 10,
+      activeDocId: 'doc_bio',
+      activePdfId: 'bio_pdf',
+      highlightColor: 'yellow',
+      queueFilter: 'ALL',
+      currentCardIndex: 0,
+      cardRevealed: false,
+      documents: [
+        {
+          id: 'doc_bio',
+          title: 'Cellular Bioenergetics & ATP Synthesis',
+          deck: 'MCAT Biology',
+          rems: [
+            { id: 'r1', indent: 0, text: 'Oxidative Phosphorylation :: ATP synthesis driven by the electron transport chain proton-motive force across the inner mitochondrial membrane.' },
+            { id: 'r2', indent: 1, text: 'Chemiosmotic Theory >> Transmembrane H+ gradient couples electron flow to ATP Synthase rotation.' },
+            { id: 'r3', indent: 1, text: 'Complex I (NADH Dehydrogenase) pumps {{4 protons}} per NADH oxidized into the {{intermembrane space}}.' },
+            { id: 'r4', indent: 0, text: 'Citric Acid Cycle (Krebs) :: Amphibolic cycle in the mitochondrial matrix yielding 3 NADH, 1 FADH2, and 1 GTP per Acetyl-CoA.' },
+            { id: 'r5', indent: 1, text: 'Rate-limiting enzyme of Krebs Cycle >> Isocitrate Dehydrogenase (allosterically activated by ADP and Ca2+).' }
+          ]
+        },
+        {
+          id: 'doc_cs',
+          title: 'Graph Shortest Paths & Dynamic Programming',
+          deck: 'CS Algorithms',
+          rems: [
+            { id: 'r6', indent: 0, text: 'Dijkstra Algorithm :: Greedy single-source shortest-path algorithm for graphs with non-negative edge weights.' },
+            { id: 'r7', indent: 1, text: 'What is Dijkstra time complexity with a binary min-heap? >> O((V + E) log V)' },
+            { id: 'r8', indent: 0, text: 'Bellman-Ford Algorithm relaxes all {{E edges}} across {{V - 1 iterations}} and detects negative weight cycles.' }
+          ]
+        },
+        {
+          id: 'doc_neuro',
+          title: 'Synaptic Plasticity & Long-Term Potentiation',
+          deck: 'Cognitive Neuroscience',
+          rems: [
+            { id: 'r9', indent: 0, text: 'NMDA Glutamate Receptor :: Coincidence detector requiring both presynaptic glutamate and postsynaptic depolarization to expel Mg2+.' },
+            { id: 'r10', indent: 1, text: 'Calcium influx through NMDA receptors activates {{CaMKII}}, triggering insertion of {{AMPA receptors}} into the dendritic spine.' }
+          ]
+        }
+      ],
+      cards: [
+        { id: 'c1', front: 'Oxidative Phosphorylation', back: 'ATP synthesis driven by the electron transport chain proton-motive force across the inner mitochondrial membrane.', deck: 'MCAT Biology', type: 'Concept ::', interval: 4, ease: 250, status: 'Due', explanation: 'Protons accumulate in the intermembrane space and flow down their electrochemical gradient through F0-F1 ATP Synthase.' },
+        { id: 'c2', front: 'Chemiosmotic Theory', back: 'Transmembrane H+ gradient couples electron flow to ATP Synthase rotation.', deck: 'MCAT Biology', type: 'Basic >>', interval: 6, ease: 260, status: 'Due', explanation: 'Proposed by Peter Mitchell (1961): ATP synthesis stalls immediately if the inner membrane becomes permeable to protons.' },
+        { id: 'c3', front: 'Complex I (NADH Dehydrogenase) pumps [...] per NADH oxidized into the [...].', back: '4 protons • intermembrane space', deck: 'MCAT Biology', type: 'Cloze {{}}', interval: 2, ease: 240, status: 'Due', explanation: 'Complex I, III, and IV contribute 4, 4, and 2 H+ respectively (10 H+ total per NADH).' },
+        { id: 'c4', front: 'Rate-limiting enzyme of the Citric Acid (Krebs) Cycle', back: 'Isocitrate Dehydrogenase (activated by ADP/Ca2+, inhibited by ATP/NADH)', deck: 'MCAT Biology', type: 'Basic >>', interval: 9, ease: 265, status: 'Learning', explanation: 'Mnemonic: "Isobaric pressure" sets the pace of the Krebs cycle.' },
+        { id: 'c5', front: 'Dijkstra Algorithm', back: 'Greedy single-source shortest-path algorithm for graphs with non-negative edge weights.', deck: 'CS Algorithms', type: 'Concept ::', interval: 12, ease: 270, status: 'Mastered', explanation: 'Fails on negative edge weights because once a vertex is extracted from the priority queue, its distance is finalized.' },
+        { id: 'c6', front: 'What is Dijkstra time complexity with a binary min-heap?', back: 'O((V + E) log V)', deck: 'CS Algorithms', type: 'Basic >>', interval: 5, ease: 250, status: 'Due', explanation: 'V extract-min operations and up to E decrease-key operations on a binary heap.' },
+        { id: 'c7', front: 'Bellman-Ford Algorithm relaxes all [...] across [...] and detects negative weight cycles.', back: 'E edges • V - 1 iterations', deck: 'CS Algorithms', type: 'Cloze {{}}', interval: 3, ease: 235, status: 'Due', explanation: 'Any simple path in a graph with V vertices has at most V - 1 edges.' },
+        { id: 'c8', front: 'NMDA Glutamate Receptor', back: 'Coincidence detector requiring both presynaptic glutamate and postsynaptic depolarization to expel Mg2+.', deck: 'Cognitive Neuroscience', type: 'Concept ::', interval: 7, ease: 255, status: 'Due', explanation: 'Embodies Hebbian learning ("neurons that fire together wire together").' },
+        { id: 'c9', front: 'SN2 Nucleophilic Substitution Stereochemistry', back: 'Concerted backside attack resulting in 100% inversion of configuration (Walden inversion).', deck: 'Organic Chemistry', type: 'Concept ::', interval: 14, ease: 280, status: 'Mastered', explanation: 'Favored by methyl/primary substrates and polar aprotic solvents (DMSO, Acetone).' }
+      ],
+      occlusions: [
+        { idx: 0, label: 'Intermembrane Space (High H+ / Low pH)', hidden: true, deck: 'MCAT Biology' },
+        { idx: 1, label: 'Inner Mitochondrial Membrane (Cardiolipin-rich)', hidden: true, deck: 'MCAT Biology' },
+        { idx: 2, label: 'Cytochrome c (Mobile 1-e- Carrier)', hidden: true, deck: 'MCAT Biology' },
+        { idx: 3, label: 'ATP Synthase (F0 Proton Channel + F1 Catalytic Knob)', hidden: true, deck: 'MCAT Biology' },
+        { idx: 4, label: 'Mitochondrial Matrix (High pH ~7.8, TCA Cycle)', hidden: true, deck: 'MCAT Biology' }
+      ],
+      exams: [
+        { id: 'ex1', title: 'MCAT Bioenergetics & Biochemistry', daysLeft: 14, targetRet: 95, dailyCards: 18, readiness: 84 },
+        { id: 'ex2', title: 'CS301 Graph & DP Midterm', daysLeft: 9, targetRet: 90, dailyCards: 22, readiness: 79 },
+        { id: 'ex3', title: 'Neurobiology Synaptic Systems Quiz', daysLeft: 5, targetRet: 95, dailyCards: 15, readiness: 91 }
+      ],
+      tutorMessages: [
+        { role: 'ai', text: 'Welcome to your RemMind Socratic AI Tutor! I have full context of your 3 Knowledge Base documents (Cellular Bioenergetics, Graph Algorithms, and Synaptic Plasticity). Ask me to explain a concept, quiz you Socratically, or turn any explanation into a flashcard.' }
+      ]
+    };
+
+    let state = loadAppState();
+    let retentionChartInstance = null;
+    let deckMasteryChartInstance = null;
+
+    function loadAppState() {
+      try {
+        const raw = localStorage.getItem('remmind_ai_state_v2');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.cards)) return parsed;
+        }
+      } catch (e) {}
+      return JSON.parse(JSON.stringify(DEFAULT_STATE));
+    }
+
+    function saveAppState() {
+      try { localStorage.setItem('remmind_ai_state_v2', JSON.stringify(state)); } catch (e) {}
+    }
+
+    function showToast(msg) {
+      const banner = document.getElementById('toastBanner');
+      const text = document.getElementById('toastMessageText');
+      if (!banner || !text) return;
+      text.textContent = msg;
+      banner.classList.remove('hidden');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => banner.classList.add('hidden'), 2800);
+    }
+
+    function navigateTo(pageId) {
+      const target = PAGES.find(p => p.id === pageId) || PAGES[0];
+      state.activePage = target.id;
+      saveAppState();
+      document.querySelectorAll('.page-view').forEach(sec => sec.classList.add('hidden'));
+      const activeSec = document.getElementById('page-' + target.id);
+      if (activeSec) activeSec.classList.remove('hidden');
+
+      renderNavigation();
+      renderGlobalMetrics();
+      if (target.id === 'dashboard') renderDashboardPage();
+      if (target.id === 'outliner') renderOutlinerPage();
+      if (target.id === 'flashcards') renderFlashcardsPage();
+      if (target.id === 'pdf-reader') renderPdfReaderPage();
+      if (target.id === 'ai-generator') renderAiGeneratorPage();
+      if (target.id === 'quiz') renderQuizPage();
+      if (target.id === 'occlusion') renderOcclusionPage();
+      if (target.id === 'ai-tutor') renderAiTutorPage();
+      if (target.id === 'card-table') renderCardTablePage();
+      if (target.id === 'exam-scheduler') renderExamSchedulerPage();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function stepPage(delta) {
+      const idx = PAGES.findIndex(p => p.id === state.activePage);
+      const nextIdx = (idx + delta + PAGES.length) % PAGES.length;
+      navigateTo(PAGES[nextIdx].id);
+    }
+
+    function toggleMobileSidebar() {
+      const sb = document.getElementById('sidebarNav');
+      if (!sb) return;
+      sb.classList.toggle('hidden');
+      sb.classList.toggle('fixed');
+      sb.classList.toggle('inset-y-14');
+      sb.classList.toggle('left-0');
+      sb.classList.toggle('z-40');
+      sb.classList.toggle('bg-slate-900');
+    }
+
+    function renderNavigation() {
+      const activeObj = PAGES.find(p => p.id === state.activePage) || PAGES[0];
+      document.getElementById('sidebarPageIndicator').textContent = `Page ${activeObj.num} of 10`;
+      document.getElementById('sidebarPageTitle').textContent = activeObj.title;
+
+      document.getElementById('topPageRibbon').innerHTML = PAGES.map(p => `
+        <button onclick="navigateTo('${p.id}')" class="px-2.5 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5 ${
+          p.id === state.activePage ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
+        }"><span>${p.icon}</span><span>${p.short}</span></button>
+      `).join('');
+
+      document.getElementById('sidebarPageList').innerHTML = PAGES.map(p => `
+        <button onclick="navigateTo('${p.id}')" class="w-full text-left px-2.5 py-2 rounded-xl text-xs font-medium transition flex items-center justify-between ${
+          p.id === state.activePage ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/40 font-semibold' : 'text-slate-300 hover:bg-slate-800/70'
+        }">
+          <span class="flex items-center gap-2 truncate"><span>${p.icon}</span><span class="truncate">${p.short}</span></span>
+          <span class="text-[10px] font-mono text-slate-500">${p.num}/10</span>
+        </button>
+      `).join('');
+
+      document.getElementById('sidebarDocList').innerHTML = state.documents.map(doc => `
+        <button onclick="openDocInOutliner('${doc.id}')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-800 text-slate-300 flex items-center justify-between">
+          <span class="truncate">📄 ${doc.title}</span>
+          <span class="text-[10px] text-slate-500 ml-1">${doc.rems.length}</span>
+        </button>
+      `).join('');
+    }
+
+    function openDocInOutliner(docId) {
+      state.activeDocId = docId;
+      saveAppState();
+      navigateTo('outliner');
+    }
+
+    function QuickCreateDoc() {
+      const newId = 'doc_' + Date.now();
+      state.documents.push({
+        id: newId,
+        title: `Study Notes Module #${state.documents.length + 1}`,
+        deck: 'MCAT Biology',
+        rems: [{ id: 'rem_' + Date.now(), indent: 0, text: 'Core Concept :: Write your definition here to create a flashcard automatically.' }]
+      });
+      state.activeDocId = newId;
+      saveAppState();
+      navigateTo('outliner');
+      showToast('Created new Rem document!');
+    }
+
+    function renderGlobalMetrics() {
+      const dueCards = state.cards.filter(c => c.status === 'Due' || c.status === 'Learning').length;
+      const totalRems = state.documents.reduce((acc, d) => acc + d.rems.length, 0);
+      document.getElementById('headerStreakCount').textContent = state.streak;
+      document.getElementById('headerDueBadge').textContent = dueCards;
+      document.getElementById('sidebarTotalCards').textContent = `${state.cards.length} cards`;
+      document.getElementById('dashDueBtnCount').textContent = `${dueCards} Due`;
+      document.getElementById('dashMetricDue').textContent = dueCards;
+      document.getElementById('dashMetricRems').textContent = totalRems;
+      document.getElementById('dashReviewedTodayText').textContent = `${state.reviewedToday} reviewed today • Est. ${Math.max(1, Math.ceil(dueCards * 0.4))} mins left`;
+    }
+
+    function formatRemSyntaxHtml(text) {
+      let safe = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      if (safe.includes('::')) {
+        const [lhs, ...rhs] = safe.split('::');
+        return `<span class="concept-pill">${lhs.trim()}</span> <span class="text-emerald-400 font-mono font-bold">::</span> <span>${rhs.join('::').trim()}</span>`;
+      }
+      if (safe.includes('&gt;&gt;')) {
+        const [lhs, ...rhs] = safe.split('&gt;&gt;');
+        return `<span class="forward-pill">${lhs.trim()}</span> <span class="text-cyan-400 font-mono font-bold">&gt;&gt;</span> <span>${rhs.join('>>').trim()}</span>`;
+      }
+      return safe.replace(/\{\{([^}]+)\}\}/g, '<span class="cloze-pill">{$1}</span>');
+    }
+
+    function renderDashboardPage() {
+      const allRems = [];
+      state.documents.forEach(doc => doc.rems.forEach(r => allRems.push({ ...r, deck: doc.deck })));
+      document.getElementById('dashRecentRemsList').innerHTML = allRems.slice(0, 6).map(r => `
+        <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-between gap-2 text-xs">
+          <div class="truncate"><span class="text-indigo-400 font-semibold mr-1.5">[${r.deck}]</span><span>${formatRemSyntaxHtml(r.text)}</span></div>
+          <button onclick="navigateTo('outliner')" class="text-[11px] text-slate-400 hover:text-white shrink-0">Edit →</button>
+        </div>
+      `).join('');
+
+      document.getElementById('dashPageDirectory').innerHTML = PAGES.map(p => `
+        <button onclick="navigateTo('${p.id}')" class="w-full p-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between transition">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="text-base">${p.icon}</span>
+            <div class="truncate">
+              <div class="text-xs font-semibold text-white truncate">${p.title}</div>
+              <div class="text-[11px] text-slate-400 truncate">${p.desc}</div>
+            </div>
+          </div>
+          <span class="text-xs text-indigo-400 font-mono shrink-0">Open →</span>
+        </button>
+      `).join('');
+    }
+
+    function fillQuickSample(sampleText) {
+      const inp = document.getElementById('quickCaptureInput');
+      inp.value = sampleText;
+      inp.focus();
+    }
+
+    function parseRemToCard(rawText, deckName) {
+      if (rawText.includes('::')) {
+        const parts = rawText.split('::');
+        return { id: 'c_' + Date.now() + Math.random().toString(36).slice(2, 5), front: parts[0].trim(), back: parts.slice(1).join('::').trim(), deck: deckName, type: 'Concept ::', interval: 1, ease: 250, status: 'Due', explanation: 'Auto-generated from Concept :: Descriptor syntax.' };
+      }
+      if (rawText.includes('>>')) {
+        const parts = rawText.split('>>');
+        return { id: 'c_' + Date.now() + Math.random().toString(36).slice(2, 5), front: parts[0].trim(), back: parts.slice(1).join('>>').trim(), deck: deckName, type: 'Basic >>', interval: 1, ease: 250, status: 'Due', explanation: 'Auto-generated from Basic >> Card syntax.' };
+      }
+      const clozeMatch = rawText.match(/\{\{([^}]+)\}\}/g);
+      if (clozeMatch) {
+        return { id: 'c_' + Date.now() + Math.random().toString(36).slice(2, 5), front: rawText.replace(/\{\{([^}]+)\}\}/g, '[...]'), back: clozeMatch.map(m => m.replace(/\{\{|\}\}/g, '')).join(' • '), deck: deckName, type: 'Cloze {{}}', interval: 1, ease: 250, status: 'Due', explanation: 'Auto-generated from {{Cloze}} syntax.' };
+      }
+      return null;
+    }
+
+    function handleQuickCapture() {
+      const inp = document.getElementById('quickCaptureInput');
+      const deck = document.getElementById('quickCaptureDeck').value;
+      if (!inp.value.trim()) return showToast('Enter a Rem note or flashcard syntax first!');
+      const text = inp.value.trim();
+      state.documents[0].rems.unshift({ id: 'r_' + Date.now(), indent: 0, text });
+      const maybeCard = parseRemToCard(text, deck);
+      if (maybeCard) state.cards.unshift(maybeCard);
+      inp.value = '';
+      saveAppState();
+      renderGlobalMetrics();
+      renderDashboardPage();
+      showToast(maybeCard ? 'Added Rem + Auto-generated Flashcard!' : 'Saved Rem to Daily Document!');
+    }
+
+    function switchActiveDocument(docId) { state.activeDocId = docId; saveAppState(); renderOutlinerPage(); }
+    function insertSyntaxToken(token) {
+      const inp = document.getElementById('outlinerNewRemInput');
+      inp.value += token;
+      inp.focus();
+    }
+
+    function addRemToActiveDoc() {
+      const inp = document.getElementById('outlinerNewRemInput');
+      const indent = parseInt(document.getElementById('newRemIndentLevel').value, 10) || 0;
+      if (!inp.value.trim()) return showToast('Type a Rem bullet before adding!');
+      const doc = state.documents.find(d => d.id === state.activeDocId) || state.documents[0];
+      doc.rems.push({ id: 'r_' + Date.now(), indent, text: inp.value.trim() });
+      const newCard = parseRemToCard(inp.value.trim(), doc.deck);
+      if (newCard) state.cards.unshift(newCard);
+      inp.value = '';
+      saveAppState();
+      renderOutlinerPage();
+      renderGlobalMetrics();
+      showToast('Rem added & synced!');
+    }
+
+    function deleteRemBullet(remId) {
+      const doc = state.documents.find(d => d.id === state.activeDocId) || state.documents[0];
+      doc.rems = doc.rems.filter(r => r.id !== remId);
+      saveAppState();
+      renderOutlinerPage();
+      renderGlobalMetrics();
+    }
+
+    function aiExpandCurrentDocument() {
+      const doc = state.documents.find(d => d.id === state.activeDocId) || state.documents[0];
+      const expansions = [
+        { indent: 1, text: 'Uncoupling Proteins (UCP1 / Thermogenin) :: Proton channels in brown adipose tissue that dissipate the H+ gradient as heat.' },
+        { indent: 2, text: '2,4-Dinitrophenol (DNP) >> Synthetic protonophore that collapses the electrochemical proton gradient.' }
+      ];
+      expansions.forEach(item => {
+        doc.rems.push({ id: 'r_' + Date.now() + Math.random(), indent: item.indent, text: item.text });
+        const card = parseRemToCard(item.text, doc.deck);
+        if (card) state.cards.unshift(card);
+      });
+      saveAppState();
+      renderOutlinerPage();
+      renderGlobalMetrics();
+      showToast('✨ AI expanded document with 2 Rems & Flashcards!');
+    }
+
+    function renderOutlinerPage() {
+      const doc = state.documents.find(d => d.id === state.activeDocId) || state.documents[0];
+      document.getElementById('outlinerDocSelect').innerHTML = state.documents.map(d => `<option value="${d.id}" ${d.id === doc.id ? 'selected' : ''}>${d.title} (${d.deck})</option>`).join('');
+      document.getElementById('activeDocTitleHeading').textContent = doc.title;
+
+      const extractedCards = [];
+      document.getElementById('outlinerTreeContainer').innerHTML = doc.rems.map(r => {
+        const c = parseRemToCard(r.text, doc.deck);
+        if (c) extractedCards.push(c);
+        return `<div style="margin-left: ${r.indent * 24}px" class="rem-bullet p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex items-start justify-between gap-3">
+          <div class="flex items-start gap-2.5 text-sm">
+            <span class="w-2 h-2 rounded-full bg-indigo-400 mt-2 shrink-0"></span>
+            <div>${formatRemSyntaxHtml(r.text)}</div>
+          </div>
+          <button onclick="deleteRemBullet('${r.id}')" class="text-slate-500 hover:text-rose-400 text-xs">✕</button>
+        </div>`;
+      }).join('');
+
+      document.getElementById('outlinerCardCountBadge').textContent = `${extractedCards.length} Cards in Doc`;
+      document.getElementById('outlinerLiveCardsPreview').innerHTML = extractedCards.map(c => `
+        <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
+          <div class="font-semibold text-white">${c.front}</div>
+          <div class="text-slate-400">↳ ${c.back}</div>
+        </div>
+      `).join('');
+      document.getElementById('outlinerBacklinksList').innerHTML = `
+        <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          <span>📄 Lehninger_Bioenergetics_Ch19.pdf</span>
+          <button onclick="navigateTo('pdf-reader')" class="text-indigo-400 hover:underline">Open PDF →</button>
+        </div>
+      `;
+    }
+
+    function getFilteredQueueCards() {
+      return state.queueFilter === 'ALL' ? state.cards : state.cards.filter(c => c.deck === state.queueFilter);
+    }
+    function filterFlashcardQueue(deckValue) { state.queueFilter = deckValue; state.currentCardIndex = 0; state.cardRevealed = false; renderFlashcardsPage(); }
+    function shuffleFlashcardQueue() { state.cards.sort(() => Math.random() - 0.5); state.currentCardIndex = 0; state.cardRevealed = false; renderFlashcardsPage(); showToast('Shuffled Queue!'); }
+    function revealFlashcardAnswer() { state.cardRevealed = true; renderFlashcardsPage(); }
+
+    function renderFlashcardsPage() {
+      const list = getFilteredQueueCards();
+      if (!list.length) return;
+      if (state.currentCardIndex >= list.length) state.currentCardIndex = 0;
+      const card = list[state.currentCardIndex];
+      document.getElementById('fcQueueCounterText').textContent = `Card ${state.currentCardIndex + 1} of ${list.length}`;
+      document.getElementById('fcCurrentDeckBadge').textContent = card.deck;
+      document.getElementById('fcStabilityText').textContent = `Interval: ${card.interval}d • Ease: ${card.ease}%`;
+      document.getElementById('fcCardTypePill').textContent = card.type;
+      document.getElementById('fcFrontText').textContent = card.front;
+      document.getElementById('fcBackText').textContent = card.back;
+      document.getElementById('fcAiExplanationText').textContent = card.explanation;
+      document.getElementById('fcSessionProgressBar').style.width = `${Math.round(((state.currentCardIndex + 1) / list.length) * 100)}%`;
+      document.getElementById('fcAnswerContainer').classList.toggle('hidden', !state.cardRevealed);
+      document.getElementById('fcRevealBtnWrapper').classList.toggle('hidden', state.cardRevealed);
+      document.getElementById('fcRatingBtnsWrapper').classList.toggle('hidden', !state.cardRevealed);
+    }
+
+    function rateCurrentCard(rating) {
+      const list = getFilteredQueueCards();
+      if (!list.length) return;
+      const card = list[state.currentCardIndex];
+      if (rating === 'again') { card.interval = 1; card.status = 'Learning'; }
+      else if (rating === 'hard') { card.interval = Math.max(1, Math.round(card.interval * 1.2)); card.status = 'Learning'; }
+      else if (rating === 'good') { card.interval = Math.max(2, Math.round(card.interval * 2.2)); card.status = card.interval >= 10 ? 'Mastered' : 'Learning'; }
+      else if (rating === 'easy') { card.interval = Math.max(4, Math.round(card.interval * 3.5)); card.status = 'Mastered'; }
+      state.reviewedToday += 1;
+      state.currentCardIndex = (state.currentCardIndex + 1) % list.length;
+      state.cardRevealed = false;
+      saveAppState();
+      renderGlobalMetrics();
+      renderFlashcardsPage();
+      showToast(`Scheduled next review in ${card.interval}d`);
+    }
+
+    function generateExtraMnemonic() {
+      const list = getFilteredQueueCards();
+      if (!list.length) return;
+      list[state.currentCardIndex].explanation = `💡 High-Yield Visual Mnemonic: Link "${list[state.currentCardIndex].front}" to "${list[state.currentCardIndex].back.slice(0, 50)}..."`;
+      renderFlashcardsPage();
+      showToast('Updated AI mnemonic!');
+    }
+
+    const PDF_DATA = {
+      bio_pdf: {
+        title: 'Lehninger Principles of Biochemistry — Ch 19: Oxidative Phosphorylation',
+        deck: 'MCAT Biology',
+        paragraphs: [
+          { id: 'p1', text: '19.1 Electron-Transfer Reactions: Electrons from NADH and FADH2 pass through Complexes I–IV to O2, the terminal electron acceptor.', highlighted: 'yellow' },
+          { id: 'p2', text: '19.2 Proton-Motive Force: Proton pumping across the inner mitochondrial membrane establishes ΔpH and Δψ.', highlighted: 'emerald' },
+          { id: 'p3', text: '19.3 Rotational Catalysis: Proton flow through the F0 c-ring drives 120° γ-stalk rotation and ATP synthesis in F1 β-subunits.', highlighted: 'purple' }
+        ],
+        summary: [
+          '• O2 is the final electron acceptor in Complex IV.',
+          '• F0-F1 ATP Synthase uses rotational catalysis to synthesize ~2.5 ATP per NADH.'
+        ]
+      },
+      cs_pdf: {
+        title: 'CLRS Introduction to Algorithms — Ch 22: Single-Source Shortest Paths',
+        deck: 'CS Algorithms',
+        paragraphs: [
+          { id: 'cp1', text: '22.1 Edge Relaxation: Relaxing edge (u, v) tests whether d[v] > d[u] + w(u, v).', highlighted: 'yellow' },
+          { id: 'cp2', text: '22.2 Dijkstra Greedy Invariant: Assumes all edge weights are non-negative.', highlighted: 'emerald' }
+        ],
+        summary: ['• Dijkstra runs in O((V + E) log V) with a binary min-heap.']
+      },
+      neuro_pdf: {
+        title: 'Kandel Principles of Neural Science — Ch 10: Synaptic Plasticity',
+        deck: 'Cognitive Neuroscience',
+        paragraphs: [
+          { id: 'np1', text: '10.1 NMDA Coincidence Detection: Requires presynaptic glutamate and postsynaptic depolarization to expel Mg2+.', highlighted: 'purple' }
+        ],
+        summary: ['• Ca2+ influx through NMDA receptors activates CaMKII and drives AMPA receptor insertion.']
+      }
+    };
+
+    function setHighlightColor(color) { state.highlightColor = color; }
+    function switchPdfDocument(pdfId) { state.activePdfId = pdfId; renderPdfReaderPage(); }
+    function togglePdfParagraphHighlight(paraId) {
+      const pdf = PDF_DATA[state.activePdfId] || PDF_DATA.bio_pdf;
+      const p = pdf.paragraphs.find(x => x.id === paraId);
+      if (p) p.highlighted = p.highlighted ? null : state.highlightColor;
+      renderPdfReaderPage();
+    }
+    function convertHighlightToCard(paraId) {
+      const pdf = PDF_DATA[state.activePdfId] || PDF_DATA.bio_pdf;
+      const p = pdf.paragraphs.find(x => x.id === paraId);
+      if (!p) return;
+      const [front, ...rest] = p.text.split(':');
+      state.cards.unshift({ id: 'c_pdf_' + Date.now(), front: front.trim(), back: rest.join(':').trim() || p.text, deck: pdf.deck, type: 'PDF Highlight', interval: 1, ease: 250, status: 'Due', explanation: pdf.title });
+      saveAppState();
+      renderGlobalMetrics();
+      showToast('Created Flashcard from PDF Highlight!');
+    }
+    function aiSummarizeActivePdf() { showToast('✨ Refreshed High-Yield AI PDF Summary!'); renderPdfReaderPage(); }
+    function convertPdfSummaryToCards() {
+      const pdf = PDF_DATA[state.activePdfId] || PDF_DATA.bio_pdf;
+      pdf.summary.forEach((s, i) => state.cards.unshift({ id: 'c_s_' + Date.now() + i, front: `${pdf.deck} Summary #${i + 1}`, back: s.replace(/^•\s*/, ''), deck: pdf.deck, type: 'AI Summary', interval: 1, ease: 250, status: 'Due', explanation: pdf.title }));
+      saveAppState();
+      renderGlobalMetrics();
+      showToast('Converted PDF summary bullets to Flashcards!');
+    }
+    function renderPdfReaderPage() {
+      const pdf = PDF_DATA[state.activePdfId] || PDF_DATA.bio_pdf;
+      const colorMap = { yellow: 'bg-amber-500/20 border-l-4 border-amber-400', emerald: 'bg-emerald-500/20 border-l-4 border-emerald-400', purple: 'bg-purple-500/20 border-l-4 border-purple-400' };
+      document.getElementById('pdfDocumentViewport').innerHTML = pdf.paragraphs.map(p => `
+        <div onclick="togglePdfParagraphHighlight('${p.id}')" class="p-3.5 rounded-xl cursor-pointer transition ${p.highlighted ? colorMap[p.highlighted] : 'bg-slate-900 border border-slate-800'}"><p>${p.text}</p></div>
+      `).join('');
+      const highlights = pdf.paragraphs.filter(p => p.highlighted);
+      document.getElementById('pdfHighlightCountBadge').textContent = `${highlights.length} highlights`;
+      document.getElementById('pdfHighlightsSidebarList').innerHTML = highlights.map(h => `
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2">
+          <p>${h.text}</p>
+          <button onclick="convertHighlightToCard('${h.id}')" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold">+ Make Flashcard</button>
+        </div>
+      `).join('');
+      document.getElementById('pdfAiSummaryBox').innerHTML = pdf.summary.map(s => `<p>${s}</p>`).join('');
+    }
+
+    const AI_PRESETS = {
+      mit_bio: `1. Glycolysis occurs in the cytosol and converts 1 glucose into 2 pyruvate, yielding net 2 ATP and 2 NADH.\n2. Pyruvate Dehydrogenase Complex links glycolysis to the Krebs Cycle in the mitochondrial matrix.\n3. F0-F1 ATP Synthase synthesizes ATP using the transmembrane H+ gradient.`,
+      stanford_cs: `1. Batch Gradient Descent computes the cost gradient over the entire training set at every step.\n2. Stochastic Gradient Descent updates parameters using one example per iteration.`,
+      neuro_yt: `1. Presynaptic Ca2+ influx triggers SNARE-mediated neurotransmitter vesicle fusion.\n2. NMDA receptors require both glutamate and depolarization to expel Mg2+.`
+    };
+    let generatedDraftCards = [
+      { front: 'Glycolysis Net Yield', back: 'Occurs in the cytosol; converts 1 Glucose into 2 Pyruvate, net 2 ATP and 2 NADH.', type: 'Concept ::', deck: 'MCAT Biology' },
+      { front: 'Pyruvate Dehydrogenase Complex', back: 'Links glycolysis to the Krebs Cycle in the mitochondrial matrix.', type: 'Concept ::', deck: 'MCAT Biology' }
+    ];
+    function loadAiSourcePreset(key) { document.getElementById('aiSourceTextarea').value = AI_PRESETS[key] || ''; }
+    function runAiCardGeneration() {
+      const raw = document.getElementById('aiSourceTextarea').value.trim() || AI_PRESETS.mit_bio;
+      const deck = document.getElementById('aiGenTargetDeck').value;
+      const fmt = document.getElementById('aiGenFormatSelect').value;
+      generatedDraftCards = raw.split('\n').filter(l => l.trim().length > 10).map(line => {
+        const clean = line.replace(/^\d+\.\s*/, '');
+        return { front: clean.split(' ').slice(0, 4).join(' '), back: clean, type: fmt === 'cloze' ? 'Cloze {{}}' : 'Concept ::', deck };
+      });
+      renderAiGeneratorPage();
+      showToast(`✨ Generated ${generatedDraftCards.length} AI Flashcards!`);
+    }
+    function importAllGeneratedCards() {
+      generatedDraftCards.forEach((c, i) => state.cards.unshift({ id: 'c_ai_' + Date.now() + i, ...c, interval: 1, ease: 250, status: 'Due', explanation: 'Generated via AI Studio' }));
+      saveAppState();
+      renderGlobalMetrics();
+      showToast('Added all generated cards to Queue!');
+    }
+    function renderAiGeneratorPage() {
+      const ta = document.getElementById('aiSourceTextarea');
+      if (!ta.value) ta.value = AI_PRESETS.mit_bio;
+      document.getElementById('aiGeneratedResultsContainer').innerHTML = generatedDraftCards.map(c => `
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
+          <div class="font-bold text-white">${c.front} <span class="text-indigo-400 font-mono">(${c.type})</span></div>
+          <div class="text-slate-300">${c.back}</div>
+        </div>
+      `).join('');
+    }
+
+    const QUIZ_QUESTIONS = [
+      { topic: 'MCAT Biology', q: 'Which mitochondrial ETC complex does NOT pump protons across the inner membrane?', options: ['Complex I', 'Complex II (Succinate Dehydrogenase)', 'Complex III', 'Complex IV'], correct: 1, rationale: 'Complex II transfers electrons from FADH2 to CoQ without proton translocation.' },
+      { topic: 'CS Algorithms', q: 'Why does Dijkstra fail on graphs with negative-weight edges?', options: ['Heap overflow', 'It assumes adding an edge never reduces path weight', 'Adjacency lists disallow negative ints', 'Cycle count'], correct: 1, rationale: 'Dijkstra finalizes vertex distances greedily upon min-heap extraction.' },
+      { topic: 'Cognitive Neuroscience', q: 'What expels the Mg2+ block from NMDA receptors during LTP?', options: ['Cl- influx', 'Postsynaptic depolarization via AMPA receptors', 'ACh degradation', 'Na+ channel blockade'], correct: 1, rationale: 'Postsynaptic depolarization electrostatically repels Mg2+ from the NMDA channel pore.' }
+    ];
+    let quizState = { idx: 0, correctCount: 0, answeredCount: 0, answeredCurrent: false };
+    function renderQuizPage() {
+      const item = QUIZ_QUESTIONS[quizState.idx % QUIZ_QUESTIONS.length];
+      document.getElementById('quizProgressLabel').textContent = `Question ${(quizState.idx % QUIZ_QUESTIONS.length) + 1} of ${QUIZ_QUESTIONS.length}`;
+      document.getElementById('quizTopicTag').textContent = item.topic;
+      document.getElementById('quizQuestionPrompt').textContent = item.q;
+      document.getElementById('quizScoreBadge').textContent = `Score: ${quizState.correctCount} / ${quizState.answeredCount}`;
+      document.getElementById('quizOptionsList').innerHTML = item.options.map((opt, i) => `
+        <button onclick="submitQuizOption(${i})" class="w-full p-3.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left text-xs sm:text-sm text-slate-200 flex items-center gap-3">
+          <span class="w-6 h-6 rounded-lg bg-slate-800 text-indigo-300 font-mono text-xs flex items-center justify-center font-bold">${String.fromCharCode(65 + i)}</span>
+          <span>${opt}</span>
+        </button>
+      `).join('');
+      document.getElementById('quizFeedbackBox').classList.add('hidden');
+    }
+    function submitQuizOption(choiceIdx) {
+      if (quizState.answeredCurrent) return;
+      quizState.answeredCurrent = true;
+      quizState.answeredCount += 1;
+      const item = QUIZ_QUESTIONS[quizState.idx % QUIZ_QUESTIONS.length];
+      if (choiceIdx === item.correct) quizState.correctCount += 1;
+      document.getElementById('quizScoreBadge').textContent = `Score: ${quizState.correctCount} / ${quizState.answeredCount}`;
+      document.getElementById('quizFeedbackBox').classList.remove('hidden');
+      document.getElementById('quizFeedbackHeadline').textContent = choiceIdx === item.correct ? '✅ Correct!' : `❌ Correct Answer: ${item.options[item.correct]}`;
+      document.getElementById('quizFeedbackExplanation').textContent = item.rationale;
+    }
+    function nextQuizQuestion() { quizState.idx += 1; quizState.answeredCurrent = false; renderQuizPage(); }
+    function resetPracticeQuiz() { quizState = { idx: 0, correctCount: 0, answeredCount: 0, answeredCurrent: false }; renderQuizPage(); }
+    function convertCurrentQuizToCard() {
+      const item = QUIZ_QUESTIONS[quizState.idx % QUIZ_QUESTIONS.length];
+      state.cards.unshift({ id: 'c_q_' + Date.now(), front: item.q, back: item.options[item.correct], deck: item.topic, type: 'Quiz Card', interval: 1, ease: 250, status: 'Due', explanation: item.rationale });
+      saveAppState();
+      renderGlobalMetrics();
+      showToast('Added Quiz Question to Flashcard Queue!');
+    }
+
+    function toggleSingleOcclusion(idx) { state.occlusions[idx].hidden = !state.occlusions[idx].hidden; renderOcclusionPage(); }
+    function toggleAllOcclusionMasks(hideAll) { state.occlusions.forEach(o => { o.hidden = hideAll; }); renderOcclusionPage(); }
+    function renderOcclusionPage() {
+      state.occlusions.forEach((o, i) => {
+        const rect = document.getElementById('occRect-' + i);
+        const txt = document.getElementById('occText-' + i);
+        if (rect && txt) {
+          rect.setAttribute('fill', o.hidden ? '#e11d48' : '#059669');
+          txt.textContent = o.hidden ? `[#${i + 1} Click to Reveal]` : o.label.split('(')[0].trim();
+        }
+      });
+      document.getElementById('occlusionItemsList').innerHTML = state.occlusions.map((o, i) => `
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+          <span>#${i + 1}: ${o.hidden ? '🔒 [Occluded]' : o.label}</span>
+          <button onclick="toggleSingleOcclusion(${i})" class="px-2.5 py-1 rounded bg-slate-800 text-slate-200">${o.hidden ? 'Reveal' : 'Hide'}</button>
+        </div>
+      `).join('');
+    }
+
+    function renderAiTutorPage() {
+      const box = document.getElementById('aiTutorMessages');
+      box.innerHTML = state.tutorMessages.map(m => `
+        <div class="flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}">
+          <div class="max-w-xl p-3.5 rounded-2xl text-xs sm:text-sm ${m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-slate-950 border border-slate-800 text-slate-200'}">${m.text}</div>
+        </div>
+      `).join('');
+      box.scrollTop = box.scrollHeight;
+    }
+    function sendQuickTutorPrompt(p) { document.getElementById('aiTutorInput').value = p; handleSendTutorMessage(); }
+    function handleSendTutorMessage() {
+      const inp = document.getElementById('aiTutorInput');
+      if (!inp.value.trim()) return;
+      const q = inp.value.trim();
+      state.tutorMessages.push({ role: 'user', text: q });
+      inp.value = '';
+      let reply = 'Chemiosmosis acts like a hydroelectric dam: Complexes I, III, and IV pump H+ into the intermembrane space, and ATP Synthase spins as H+ rushes back into the matrix.';
+      if (q.toLowerCase().includes('acronym') || q.toLowerCase().includes('citric')) {
+        reply = 'Mnemonic: "Citrate Is Krebs Starting Substrate For Making Oxaloacetate" (Citrate → Isocitrate → α-Ketoglutarate → Succinyl-CoA → Succinate → Fumarate → Malate → Oxaloacetate).';
+      } else if (q.toLowerCase().includes('socratic') || q.toLowerCase().includes('graph')) {
+        reply = 'Socratic Prompt: Why does Dijkstra fail when a negative-weight edge appears downstream of an already-finalized vertex, whereas Bellman-Ford succeeds via V - 1 relaxation passes?';
+      }
+      state.tutorMessages.push({ role: 'ai', text: reply });
+      saveAppState();
+      renderAiTutorPage();
+    }
+
+    function renderCardTablePage() {
+      const q = (document.getElementById('cardTableSearchInput')?.value || '').toLowerCase();
+      const statusFilter = document.getElementById('cardTableStatusFilter')?.value || 'ALL';
+      const filtered = state.cards.filter(c => (!q || c.front.toLowerCase().includes(q) || c.back.toLowerCase().includes(q)) && (statusFilter === 'ALL' || c.status === statusFilter));
+      document.getElementById('cardTableBody').innerHTML = filtered.map(c => `
+        <tr class="hover:bg-slate-800/40">
+          <td class="py-3 px-4 font-semibold text-white">${c.front}</td>
+          <td class="py-3 px-4 text-slate-300">${c.back}</td>
+          <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-slate-800 text-indigo-300">${c.deck}</span></td>
+          <td class="py-3 px-4 font-mono text-emerald-400">${c.type}</td>
+          <td class="py-3 px-4 text-right font-mono">${c.interval}d</td>
+          <td class="py-3 px-4 text-center">${c.status}</td>
+          <td class="py-3 px-4 text-right"><button onclick="deleteCardById('${c.id}')" class="text-slate-500 hover:text-rose-400">Delete</button></td>
+        </tr>
+      `).join('');
+    }
+    function deleteCardById(id) { state.cards = state.cards.filter(c => c.id !== id); saveAppState(); renderCardTablePage(); renderGlobalMetrics(); }
+    function openNewCardModal() { document.getElementById('newCardModal').classList.remove('hidden'); }
+    function closeNewCardModal() { document.getElementById('newCardModal').classList.add('hidden'); }
+    function saveModalNewCard() {
+      const f = document.getElementById('modalCardFront').value.trim();
+      const b = document.getElementById('modalCardBack').value.trim();
+      const d = document.getElementById('modalCardDeck').value;
+      if (!f || !b) return showToast('Fill in both Front and Back!');
+      state.cards.unshift({ id: 'c_m_' + Date.now(), front: f, back: b, deck: d, type: 'Custom Card', interval: 1, ease: 250, status: 'Due', explanation: 'Custom card' });
+      closeNewCardModal();
+      saveAppState();
+      renderCardTablePage();
+      renderGlobalMetrics();
+    }
+
+    function addExamScheduleItem() {
+      const title = document.getElementById('examTitleInput').value.trim() || 'Organic Chemistry Final';
+      const days = Math.max(2, parseInt(document.getElementById('examDaysInput').value, 10) || 14);
+      const targetRet = parseInt(document.getElementById('examTargetRetInput').value, 10) || 95;
+      state.exams.unshift({ id: 'ex_' + Date.now(), title, daysLeft: days, targetRet, dailyCards: Math.max(10, Math.round((state.cards.length * 2.5) / days)), readiness: 80 });
+      document.getElementById('examTitleInput').value = '';
+      saveAppState();
+      renderExamSchedulerPage();
+    }
+
+    function renderExamSchedulerPage() {
+      document.getElementById('examSchedulesList').innerHTML = state.exams.map(ex => `
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
+          <div class="flex justify-between font-bold text-white"><span>${ex.title}</span><span class="text-amber-300">${ex.daysLeft}d left</span></div>
+          <div class="flex justify-between text-slate-400"><span>Target: ${ex.targetRet}%</span><span>Daily Dose: ${ex.dailyCards} cards/day</span></div>
+        </div>
+      `).join('');
+
+      if (typeof Chart !== 'undefined') {
+        const ctx1 = document.getElementById('retentionChartCanvas');
+        if (ctx1) {
+          if (retentionChartInstance) retentionChartInstance.destroy();
+          retentionChartInstance = new Chart(ctx1, {
+            type: 'line',
+            data: {
+              labels: ['Day 0', 'Day 1', 'Day 3', 'Day 6', 'Day 10', 'Day 14 (Exam)'],
+              datasets: [
+                { label: 'FSRS Spaced Repetition (%)', data: [100, 94, 96, 93, 97, 95], borderColor: '#6366F1', tension: 0.35 },
+                { label: 'Unreviewed Forgetting Curve (%)', data: [100, 58, 41, 32, 26, 21], borderColor: '#F43F5E', borderDash: [5, 5], tension: 0.35 }
+              ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
+        const ctx2 = document.getElementById('deckMasteryChartCanvas');
+        if (ctx2) {
+          if (deckMasteryChartInstance) deckMasteryChartInstance.destroy();
+          deckMasteryChartInstance = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+              labels: ['MCAT Biology', 'CS Algorithms', 'Cognitive Neuro', 'Organic Chem'],
+              datasets: [{ label: 'Mastery (%)', data: [88, 82, 91, 79], backgroundColor: ['#6366F1', '#06B6D4', '#10B981', '#F59E0B'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
+      }
+    }
+
+    function openCommandModal() { document.getElementById('commandModal').classList.remove('hidden'); renderCommandPaletteResults(); }
+    function closeCommandModal() { document.getElementById('commandModal').classList.add('hidden'); }
+    function renderCommandPaletteResults() {
+      const q = (document.getElementById('commandSearchInput')?.value || '').toLowerCase();
+      document.getElementById('commandResultsList').innerHTML = PAGES.filter(p => !q || p.title.toLowerCase().includes(q)).map(p => `
+        <button onclick="navigateTo('${p.id}'); closeCommandModal();" class="w-full p-2.5 rounded-xl hover:bg-slate-800 text-left flex justify-between text-xs">
+          <span class="font-semibold text-white">${p.icon} ${p.title}</span><span class="text-slate-400">${p.desc}</span>
+        </button>
+      `).join('');
+    }
+    function resetDemoState() { state = JSON.parse(JSON.stringify(DEFAULT_STATE)); saveAppState(); navigateTo('dashboard'); showToast('Reset demo state!'); }
+
+    window.onload = () => navigateTo(state.activePage || 'dashboard');
+  </script>
+</body>
+</html>
